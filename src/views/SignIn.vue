@@ -1,4 +1,3 @@
-
 <template>
   <div class="container py-5">
     <form class="w-100" @submit.prevent.stop="handleSubmit">
@@ -10,6 +9,7 @@
         <label for="email">email</label>
         <input
           id="email"
+          v-model="email"
           name="email"
           type="email"
           class="form-control"
@@ -23,6 +23,7 @@
         <label for="password">Password</label>
         <input
           id="password"
+          v-model="password"
           name="password"
           type="password"
           class="form-control"
@@ -31,7 +32,13 @@
         />
       </div>
 
-      <button class="btn btn-lg btn-primary btn-block mb-3" type="submit">Submit</button>
+      <button
+        class="btn btn-lg btn-primary btn-block mb-3"
+        type="submit"
+        :disabled="isProcessing"
+      >
+        Submit
+      </button>
 
       <div class="text-center mb-3">
         <p>
@@ -45,22 +52,49 @@
 </template>
 
 <script>
+import authorizationAPI from './../apis/authorization'
+import { Toast } from './../utils/helpers'
+
 export default {
-  name: "SignIn",
+  name: 'SignIn',
   data() {
     return {
-      email: "",
-      password: ""
-    };
+      email: '',
+      password: '',
+      isProcessing: false
+    }
   },
   methods: {
-    handleSubmit(e) {
-      const data = JSON.stringify({
-        email: this.email,
-        password: this.password
-      });
-      console.log("data", data);
+    async handleSubmit(e) {
+      try {
+        if (!this.email || !this.password) {
+          Toast.fire({
+            type: 'warning',
+            title: '請填入 email 和 password'
+          })
+          return
+        }
+
+        this.isProcessing = true
+
+        const response = await authorizationAPI.signIn({
+          email: this.email,
+          password: this.password
+        })
+        const { data, statusText } = response
+        if (statusText !== 'OK' || data.status !== 'success')
+          throw new Error(statusText)
+        localStorage.setItem('token', data.token)
+        this.$router.push('/restaurants') //redirect
+      } catch (error) {
+        this.password = ''
+        Toast.fire({
+          type: 'warning',
+          title: '您輸入的帳號或密碼錯誤'
+        })
+        this.isProcessing = false
+      }
     }
   }
-};
+}
 </script>
