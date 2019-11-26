@@ -1,5 +1,5 @@
 <template>
-  <form @submit.stop.prevent="handleSubmit">
+  <form v-show="!isLoading" @submit.stop.prevent="handleSubmit">
     <div class="form-group">
       <label for="name">Name</label>
       <input
@@ -27,7 +27,8 @@
           v-for="category in categories"
           :key="category.id"
           :value="category.id"
-        >{{ category.name }}</option>
+          >{{ category.name }}</option
+        >
       </select>
     </div>
 
@@ -97,91 +98,99 @@
       />
     </div>
 
-    <button type="submit" class="btn btn-primary">送出</button>
+    <button type="submit" class="btn btn-primary" :disabled="isProcessing">
+      {{ isProcessing ? '處理中...' : '送出' }}
+    </button>
   </form>
 </template>
 
 <script>
-const dummyData = {
-  categories: [
-    {
-      id: 1,
-      name: "中式料理",
-      createdAt: "2019-06-22T09:00:43.000Z",
-      updatedAt: "2019-06-22T09:00:43.000Z"
-    },
-    {
-      id: 2,
-      name: "日本料理",
-      createdAt: "2019-06-22T09:00:43.000Z",
-      updatedAt: "2019-06-22T09:00:43.000Z"
-    },
-    {
-      id: 3,
-      name: "義大利料理",
-      createdAt: "2019-06-22T09:00:43.000Z",
-      updatedAt: "2019-06-22T09:00:43.000Z"
-    },
-    {
-      id: 4,
-      name: "墨西哥料理",
-      createdAt: "2019-06-22T09:00:43.000Z",
-      updatedAt: "2019-06-22T09:00:43.000Z"
-    }
-  ]
-};
+import adminAPI from './../apis/admin'
+import { Toast } from './../utils/helpers'
 
 export default {
   props: {
     initialRestaurant: {
       type: Object,
       default: () => ({
-        name: "",
-        categoryId: "",
-        tel: "",
-        address: "",
-        description: "",
-        image: "",
-        openingHours: ""
+        name: '',
+        categoryId: '',
+        tel: '',
+        address: '',
+        description: '',
+        image: '',
+        openingHours: ''
       })
+    },
+    isProcessing: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
       restaurant: {
-        name: "",
-        categoryId: "",
-        tel: "",
-        address: "",
-        description: "",
-        image: "",
-        openingHours: ""
+        name: '',
+        categoryId: '',
+        tel: '',
+        address: '',
+        description: '',
+        image: '',
+        openingHours: ''
       },
-      categories: []
-    };
+      categories: [],
+      isLoading: true
+    }
   },
   created() {
-    this.fetchCategories();
+    this.fetchCategories()
     this.restaurant = {
       ...this.restaurant,
       ...this.initialRestaurant
-    };
+    }
   },
   methods: {
-    fetchCategories() {
-      this.categories = dummyData.categories;
+    async fetchCategories() {
+      try {
+        const { data, statusText } = await adminAPI.categories.get()
+
+        if (statusText !== 'OK') {
+          throw new Error(statusText)
+        }
+        this.categories = data.categories
+        this.isLoading = false
+      } catch (error) {
+        this.isLoading = false
+        Toast.fire({
+          type: 'error',
+          title: '無法取得餐廳類別，請稍後再試'
+        })
+      }
     },
     handleFileChange(e) {
-      const files = e.target.files;
-      if (!files.length) return;
-      const imageURL = window.URL.createObjectURL(files[0]);
-      this.restaurant.image = imageURL;
+      const files = e.target.files
+      if (!files.length) return
+      const imageURL = window.URL.createObjectURL(files[0])
+      this.restaurant.image = imageURL
     },
     handleSubmit(e) {
-      const form = e.target;
-      const formData = new FormData(form);
-      this.$emit("after-submit", formData);
+      if (!this.restaurant.name) {
+        Toast.fire({
+          type: 'warning',
+          title: '請填寫餐廳名稱'
+        })
+        return
+      } else if (!this.restaurant.categoryId) {
+        Toast.fire({
+          type: 'warning',
+          title: '請選擇餐廳類別'
+        })
+        return
+      }
+      const form = e.target
+      const formData = new FormData(form)
+      this.$emit('after-submit', formData)
     }
   }
-};
+}
 </script>
