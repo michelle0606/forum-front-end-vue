@@ -81,10 +81,12 @@ export default {
           email: this.email,
           password: this.password
         })
+
         const { data, statusText } = response
         if (statusText !== 'OK' || data.status !== 'success')
           throw new Error(statusText)
         localStorage.setItem('token', data.token)
+        this.$store.commit('setCurrentUser', data.user)
         this.$router.push('/restaurants') //redirect
       } catch (error) {
         this.password = ''
