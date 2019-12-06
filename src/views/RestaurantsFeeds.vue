@@ -1,16 +1,19 @@
 <template>
   <div class="container py-5">
     <NavTabs />
-    <h1 class="mt-5">最新動態</h1>
-    <hr />
-    <div class="row">
-      <div class="col-md-6">
-        <NewestRestaurants :restaurants="restaurants" />
+    <Spinner v-if="isLoading" />
+    <template v-else>
+      <h1 class="mt-5">最新動態</h1>
+      <hr />
+      <div class="row">
+        <div class="col-md-6">
+          <NewestRestaurants :restaurants="restaurants" />
+        </div>
+        <div class="col-md-6">
+          <NewestComments :comments="comments" />
+        </div>
       </div>
-      <div class="col-md-6">
-        <NewestComments :comments="comments" />
-      </div>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -19,18 +22,21 @@ import NavTabs from './../components/NavTabs'
 import NewestRestaurants from './../components/NewestRestaurants'
 import NewestComments from './../components/NewestComments'
 import restaurantsFeedAPI from './../apis/restaurantsFeed'
+import Spinner from './../components/Spinner'
 import { Toast } from './../utils/helpers'
 
 export default {
   components: {
     NavTabs,
     NewestRestaurants,
-    NewestComments
+    NewestComments,
+    Spinner
   },
   data() {
     return {
       restaurants: [],
-      comments: []
+      comments: [],
+      isLoading: true
     }
   },
   created() {
@@ -48,7 +54,9 @@ export default {
 
         this.restaurants = data.restaurants
         this.comments = data.comments
+        this.isLoading = false
       } catch {
+        this.isLoading = false
         Toast.fire({
           type: 'error',
           title: '無法取得資料，請稍後再試'
