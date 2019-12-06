@@ -55,8 +55,8 @@ export default {
     })
   },
   beforeRouteUpdate(to, from, next) {
-    const { page } = to.query
-    this.fetchRestaurants({ page, categoryId: '' })
+    const { page = 1, categoryId = '' } = to.query
+    this.fetchRestaurants({ page, categoryId })
     next()
   },
   methods: {
@@ -67,7 +67,6 @@ export default {
           categoryId
         })
         const { data, statusText } = response
-
         if (statusText !== 'OK') {
           throw new Error(statusText)
         }
